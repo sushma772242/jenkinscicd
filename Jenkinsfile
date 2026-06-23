@@ -5,10 +5,10 @@ pipeline {
         GIT_REPO = 'https://github.com/sushma772242/jenkinscicd.git'
         AWS_REGION = 'eu-north-1'
         ECR_REPO_NAME = 'test-project1'
-        ECR_PUBLIC_REPO_URI = '292832245076.dkr.ecr.eu-north-1.amazonaws.com/test-project1'
+        ECR_REPO_URI = '292832245076.dkr.ecr.eu-north-1.amazonaws.com/test-project1'
         IMAGE_TAG = 'latest'
         AWS_ACCOUNT_ID = '292832245076'
-        IMAGE_URI = "${ECR_PUBLIC_REPO_URI}:${IMAGE_TAG}"
+        IMAGE_URI = "${ECR_REPO_URI}:${IMAGE_TAG}"
     }
 
     stages {
