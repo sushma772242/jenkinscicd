@@ -12,98 +12,69 @@ pipeline {
     }
 
     stages {
-        stage('Install AWS CLI') {
-            steps {
-                script {
-                    sh '''
-                        set -e
-                        echo "Installing AWS CLI..."
-                        sudo apt update && sudo apt install -y unzip curl
 
-                        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                        rm -rf aws
-                        unzip -q awscliv2.zip
-                        sudo ./aws/install --update
-                        aws --version
-                    '''
-                }
-            }
-        }
-
-             stage('Configure AWS Credentials') {
-    steps {
-        script {
-            sh '''
-            echo "Setting up AWS credentials for Jenkins..."
-            mkdir -p /var/lib/jenkins/.aws
-            echo "[default]" > /var/lib/jenkins/.aws/credentials
-            chown -R jenkins:jenkins /var/lib/jenkins/.aws
-            '''
-        }
-    }
-}
-
-
-        stage('Clone Repository') {
+        stage('Checkout Code') {
             steps {
                 git url: "${GIT_REPO}", branch: 'main'
             }
         }
 
-        stage('Build') {
+        stage('Check Tools') {
             steps {
-                script {
-                    sh '''
-                        echo "Building Java application..."
-                        mvn clean -B -Denforcer.skip=true package
-                    '''
-                }
+                sh '''
+                    echo "Checking installed tools..."
+                    aws --version
+                    docker --version
+                    mvn --version
+                '''
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                sh '''
+                    echo "Building Java application..."
+                    mvn clean -B -Denforcer.skip=true package
+                '''
             }
         }
 
         stage('Login to AWS ECR') {
             steps {
-                script {
-                    sh '''
-                        echo "Logging into AWS ECR..."
-                        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-                    '''
-                }
+                sh '''
+                    echo "Logging into AWS ECR..."
+                    aws ecr-public get-login-password --region us-east-1 \
+                    | docker login --username AWS --password-stdin public.ecr.aws
+                '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh '''
-                        echo "Building Docker image..."
-                        docker build -t ${IMAGE_URI} .
-                    '''
-                }
+                sh '''
+                    echo "Building Docker image..."
+                    docker build -t ${IMAGE_URI} .
+                '''
             }
         }
 
         stage('Push Docker Image to ECR') {
             steps {
-                script {
-                    sh '''
-                        echo "Pushing Docker image to ECR..."
-                        docker push ${IMAGE_URI}
-                    '''
-                }
+                sh '''
+                    echo "Pushing Docker image to ECR..."
+                    docker push ${IMAGE_URI}
+                '''
             }
         }
-
-      
     }
-    
+
     post {
         success {
-            echo "Docker image pushed to ECR successfully and deployed."
+            echo "Docker image pushed to ECR successfully."
         }
+
         failure {
             echo "Pipeline failed."
         }
     }
 }
-
