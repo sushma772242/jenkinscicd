@@ -30,15 +30,6 @@ pipeline {
             }
         }
 
-        stage('Build Application') {
-            steps {
-                sh '''
-                    echo "Building Java application..."
-                    mvn clean -B -Denforcer.skip=true package
-                '''
-            }
-        }
-
         stage('Login to AWS ECR') {
             steps {
                 sh '''
